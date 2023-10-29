@@ -34,7 +34,7 @@ def process_images():
         main_image = request.files['mainImage']
         comparison_image = request.files['comparisonImage']
         if main_image is None or comparison_image is None:
-            return jsonify({'result': 'Please select both main and comparison images.'})
+            return jsonify({'result': 'Please select between both main and comparison images.'})
         
         # Read and process the uploaded images
         main_image_data = main_image.read()
