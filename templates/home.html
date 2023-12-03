@@ -2,50 +2,13 @@
 <html>
 <head>
     <title>Pose Estimation</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-
-        h2 {
-            margin-top: 20px;
-        }
-
-        .upload-section {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            margin-top: 20px;
-        }
-
-        .upload-section label {
-            font-weight: bold;
-        }
-
-        .upload-form {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .upload-form input[type="file"] {
-            margin-top: 10px;
-        }
-
-        .upload-form input[type="submit"] {
-            margin-top: 20px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-        }
-
-        .upload-form input[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-
         .result-image {
             display: none;
             width: 400px;
@@ -53,36 +16,150 @@
         }
     </style>
 </head>
-<body>
-    <h2>Upload Images for Pose Estimation</h2>
-
-    <div class="upload-section">
-        <div class="upload-form">
-            <label for="mainImage">Upload Image:</label>
-            <input id="mainImage" type="file" name="mainImage" accept="image/*" required>
-            <img id="mainImageDisplay" class="result-image" src="" alt="Main Image">
+<body class="bg-light">
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-6">
+                <h1>Welcome, {{ username }}</h1>
+            </div>
+            <div class="col-6 text-right">
+                {% if profile_picture %}
+                    <img src="data:image/jpeg;base64,{{ profile_picture }}" alt="User Image" class="rounded-circle" style="width: 50px; height: 50px;">
+                {% endif %}
+                <a href="#" class="btn btn-danger ml-2" onclick="logout()">Logout</a>
+            </div>
         </div>
-
-        <div class="upload-form">
-            <label for="comparisonImage">Upload Comparison Image:</label>
-            <input id="comparisonImage" type="file" name="comparisonImage" accept="image/*" required>
-            <img id="comparisonImageDisplay" class="result-image" src="" alt="Comparison Image">
+        <div class="row">
+            <div class="col-1">
+                <button class="btn btn-primary" onclick="showManual()">Manual</button>
+            </div>
+            <div class="col-1">
+                <button class="btn btn-primary" onclick="showAutomation()">Automation</button>
+            </div>
         </div>
+        <hr class="my-4">
     </div>
-
-
-    <!-- Submit Button -->
-    <div class="upload-form">
-        <input type="submit" value="Process Images" onclick="sendImagesToPython()">
-        <h2 id="result-pose" class="result-image"></h2>
+    <div class="container mt-4">
+        <div id="automationSection" style="display: none;">
+            <h2 class="text-center">Upload Images for Pose Estimation</h2>
+            <div class="upload-section mt-4">
+                <!-- Main Image Section -->
+                <div class="row">
+                    <div class="col-md-6 text-right">
+                        <div class="upload-form">
+                            <label for="mainImage"><b>Upload Main Image:</b></label>
+                            <input id="mainImage" type="file" name="mainImage" accept="image/*" required>
+                            <img id="mainImageDisplay" class="result-image mt-2" src="" alt="Main Image">
+                        </div>
+                    </div>
+                    <!-- Comparison Image Section -->
+                    <div class="col-md-6 text-right">
+                        <div class="upload-form">
+                            <label for="comparisonImage"><b>Comparison Image:</b></label>
+                            <input id="comparisonImage" type="file" name="comparisonImage" accept="image/*" required>
+                            <img id="comparisonImageDisplay" class="result-image mt-2" src="" alt="Comparison Image">
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <div class="upload-form">
+                            <input type="submit" class="btn btn-primary" value="Process Images" onclick="processImages()">
+                            <h2 id="result-pose" class="text-center mt-4"></h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4" id="exerciseResultsTable">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Uploaded Image</th>
+                            <th scope="col">Comparison Image</th>
+                            <th scope="col">Similarity Score</th>
+                            <th scope="col">Date</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="manualSection" style="display: none;">
+            <div class="row col-12 text-center">
+                <div class="input-group col-4">
+                    <label for="exerciseSelect" class="form-label m-2">Select Exercise</label>
+                    <select class="form-select" id="exerciseSelect" aria-label="Default select example">
+                        <option selected value=""></option>
+                        <option value="squat">Squat</option>
+                        <option value="leg_raise">Leg-Raise</option>
+                        <option value="push_up">Push-up</option>
+                        <option value="sit_up">Sit-up</option>
+                        <option value="tadasana">Tadasana</option>
+                        <option value="glute_bridge">Glute Bridge</option>
+                        <option value="knee_push_up">Knee Push-up</option>
+                        <option value="t_pose">T_Pose</option>
+                    </select>
+                </div>
+                <div class="input-group col-4">
+                    <input type="submit" class="btn btn-primary" value="Webcam access" onclick="webcamAccess()">
+                </div>
+            </div>
+            <div class="row mt-4" id="resultsTable">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Exercise</th>
+                            <th scope="col">Exercise count</th>
+                            <th scope="col">Duration</th>
+                            <th scope="col">Time</th>
+                           
+                        </tr>
+                    </thead>
+                    <tbody>
+                     
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
     <script>
-        function sendImagesToPython() {
-            // Assuming you have two file input elements in your HTML with ids 'mainImage' and 'comparisonImage'
+        // Function to logout the user and clear the session variables
+        function logout() {
+            fetch('/logout', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                window.location.href = "/";
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+            });
+        }
+
+        // Function to show manual pose estimation
+        function showManual() {
+            document.getElementById("manualSection").style.display = "block";
+            document.getElementById("automationSection").style.display = "none";
+            updateResultsTable()
+        }
+
+        // Function to show automated pose estimation
+        function showAutomation() {
+            document.getElementById("manualSection").style.display = "none";
+            document.getElementById("automationSection").style.display = "block";
+            updateExerciseAssessment()
+        }
+        
+        // Function to process Images and return the pose estimations and similarity score
+        function processImages() {
             const mainImageInput = document.getElementById('mainImage');
             const comparisonImageInput = document.getElementById('comparisonImage');
 
-            // Get the selected files from the input elements
+            // Get selected files from the input elements
             const mainImageFile = mainImageInput.files[0];
             const comparisonImageFile = comparisonImageInput.files[0];
 
@@ -91,34 +168,119 @@
                 return;
             }
 
-            // Create a FormData object to send the files
+            // FormData object to send the files
             const formData = new FormData();
             formData.append('mainImage', mainImageFile);
             formData.append('comparisonImage', comparisonImageFile);
             console.log(formData)
-            // Send the FormData to your Python server
             fetch('/process_images', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json()) // Assuming the Python function returns JSON
+            .then(response => response.json()) 
             .then(data => {
-                // Handle the response from the Python function
-                console.log(data);
                 const mainImageDisplay = document.getElementById('mainImageDisplay');
                 const comparisonImageDisplay = document.getElementById('comparisonImageDisplay'); 
                 const poseResult = document.getElementById('result-pose')               
                 mainImageDisplay.src = 'data:image/jpeg;base64,' + data.mainImage;
                 comparisonImageDisplay.src = 'data:image/jpeg;base64,' + data.comparisonImage;
-                poseResult.textContent = data.result
+                if (data.similarity_score > 75) {
+                    poseResult.classList.add("btn-success")
+                    poseResult.classList.remove("btn-danger")
+                }
+                else {
+                    poseResult.classList.add("btn-danger")
+                    poseResult.classList.remove("btn-success")
+                }
+                poseResult.textContent = String(data.similarity_score) + "% similar"
                 mainImageDisplay.style.display = "block";
                 comparisonImageDisplay.style.display = "block";
                 poseResult.style.display = "block"
+                updateExerciseAssessment()
             })
             .catch(error => {
                 console.error('Error:', error);
             });
 
+        }
+
+        function webcamAccess() {
+            let exerciseSelect = document.getElementById("exerciseSelect").value
+            const formData = new FormData();
+
+            if((exerciseSelect !== "") && (exerciseSelect !== undefined)) {
+                formData.append('exerciseSelect', exerciseSelect);
+                fetch('/webcam_access', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    updateResultsTable()
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        function updateResultsTable() {
+            fetch('/exercise_count_data', {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                var tableBody = document.querySelector('#resultsTable tbody');
+                tableBody.innerHTML = '';
+                data.forEach(item => {
+                    var newRow = tableBody.insertRow();
+                    var cell1 = newRow.insertCell(0);
+                    var cell2 = newRow.insertCell(1);
+                    var cell3 = newRow.insertCell(2);
+                    var cell4 = newRow.insertCell(3);
+                    cell1.textContent = item.exercise;
+                    cell2.textContent = item.exercise_count;
+                    cell3.textContent = item.duration;
+                    cell4.textContent = item.start_time; 
+                });
+                $('#resultsTable table').DataTable();
+                document.getElementById('resultsTable').style.display = 'block';
+            })
+        }
+    
+        function updateExerciseAssessment() {
+            fetch('/exercise_assessment_data', {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                var tableBody = document.querySelector('#exerciseResultsTable tbody');
+                tableBody.innerHTML = '';
+                data.forEach(item => {
+                    var newRow = tableBody.insertRow();
+                    var cell1 = newRow.insertCell(0);
+                    var cell2 = newRow.insertCell(1);
+                    var cell3 = newRow.insertCell(2);
+                    var cell4 = newRow.insertCell(3);
+
+                    var uploadedImage = document.createElement("img");
+                    uploadedImage.src = "data:image/jpeg;base64," + item.uploaded_image;
+                    uploadedImage.alt = "Uploaded Image";
+                    uploadedImage.style.width = "100px";
+                    uploadedImage.style.height = "100px";
+                    cell1.appendChild(uploadedImage);
+                    var comparisonImage = document.createElement("img");
+                    comparisonImage.src = "data:image/jpeg;base64," + item.comparison_image;
+                    comparisonImage.alt = "Comparison Image";
+                    comparisonImage.style.width = "100px";
+                    comparisonImage.style.height = "100px";
+                    cell2.appendChild(comparisonImage);
+                    cell3.textContent = item.similarity_score;
+                    cell4.textContent = item.timestamp; 
+                });
+                $('#exerciseResultsTable table').DataTable();
+                document.getElementById('exerciseResultsTable').style.display = 'block';
+            })
         }
     </script>
 </body>
